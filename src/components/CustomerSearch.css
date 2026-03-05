@@ -1,0 +1,602 @@
+/* --- SEARCH HEADER LAYOUT --- */
+
+.search-header-container {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  /* Allow wrap on mobile */
+}
+
+/* Group 1: Filter & Sync */
+.filter-sync-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.branch-select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  /* Thicker border to match inputs */
+  outline: none;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 140px;
+  height: 44px;
+  /* Fix height */
+}
+
+.branch-select:focus {
+  border-color: var(--primary-gold);
+}
+
+.sync-btn {
+  padding: 0;
+  width: 44px;
+  /* Square button */
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 2px solid var(--primary-gold);
+  /* Gold border for sync */
+  color: var(--primary-gold-dark);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: #fffdf5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(212, 175, 55, 0.2);
+}
+
+.sync-btn:disabled {
+  opacity: 0.6;
+  border-color: #ddd;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Group 2: Search Input Wrapper */
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  /* Allow shrinking but not too much */
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px;
+  /* Space for icons */
+  height: 44px;
+  border: 2px solid #e5e7eb;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.search-icon-wrapper {
+  position: absolute;
+  left: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.clear-search-btn:hover {
+  color: #666;
+}
+
+.view-btn {
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  color: #666;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  gap: 6px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* VIEW CONTROLS */
+.view-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  justify-content: flex-end;
+  align-items: center;
+  /* Ensure vertical alignment */
+}
+
+/* Ensure view-toggles (container for buttons) is strictly horizontal */
+.view-toggles {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 4px;
+}
+
+.view-btn:hover {
+  border-color: var(--primary-gold);
+  color: var(--primary-gold-dark);
+}
+
+.view-btn.active {
+  background: var(--primary-gold);
+  color: var(--premium-black);
+  border-color: var(--primary-gold);
+}
+
+@media (max-width: 600px) {
+
+  /* Make view buttons compact to fit on one line */
+  .view-toggles .view-btn,
+  .view-controls .view-btn {
+    padding: 0 8px;
+    /* Reduced padding further */
+    font-size: 12px;
+    /* Smaller font */
+    height: 36px;
+    /* Reduced height */
+  }
+
+  .view-toggles {
+    gap: 2px;
+  }
+
+  /* Force controls to stay in one line */
+  .view-controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    justify-content: flex-end;
+    /* Keep aligned right but scrollable if needed */
+  }
+}
+
+.last-updated {
+  font-size: 12px;
+  color: #888;
+  text-align: right;
+  margin-top: -10px;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+/* --- CUSTOMER LIST WRAPPER --- */
+
+.customer-list {
+  display: grid;
+  gap: 12px;
+  /* Tighter gap */
+  margin-bottom: 24px;
+  /* Default GRID behavior: Dense packing (250px min) */
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+/* --- GRID VIEW STYLES (Default) --- */
+.customer-list.grid-view .customer-card {
+  display: flex;
+  flex-direction: column;
+  /* Standard Card Look */
+}
+
+/* --- LIST VIEW STYLES (Smart Responsive) --- */
+.customer-list.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customer-list.list-view .customer-card {
+  display: grid;
+  /* DESKTOP: Show Full Data (6 Columns) */
+  grid-template-columns: 80px 3fr 1.5fr 1.5fr 100px 60px;
+  /* ID | Name | City | Phone | Branch | QR */
+  gap: 15px;
+  align-items: center;
+  padding: 12px 20px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.customer-list.list-view .customer-card:hover {
+  background: #fffdf5;
+  /* Subtle gold tint on hover */
+  transform: translateX(4px);
+}
+
+/* Common Content Styles */
+.customer-list.list-view .customer-header,
+.customer-list.list-view .customer-details {
+  display: contents;
+}
+
+.customer-list.list-view .customer-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.customer-list.list-view .detail-item {
+  font-size: 14px;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.customer-list.list-view .customer-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-gold-dark);
+  background: #fdfdfd;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  text-align: center;
+}
+
+.customer-list.list-view .customer-qr {
+  display: flex;
+  justify-content: center;
+}
+
+.customer-list.list-view .customer-qr svg {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+/* MOBILE / TABLET ADAPTIVNESS (< 1000px) */
+/* When screen is narrower, We SIMPLIFY */
+@media (max-width: 1000px) {
+  .customer-list.list-view .customer-card {
+    /* Stacked Simplified Layout */
+    grid-template-columns: 1fr 1fr;
+    /* Name | Branch */
+    grid-template-areas:
+      "name name"
+      "city branch";
+    gap: 6px;
+    padding: 12px;
+  }
+
+  /* HIDE secondary info on Mobile to save space */
+  .customer-list.list-view .customer-id,
+  .customer-list.list-view .detail-item.phone,
+  .customer-list.list-view .customer-qr {
+    display: none !important;
+  }
+
+  .customer-list.list-view .customer-name {
+    grid-area: name;
+    font-size: 16px;
+  }
+
+  .customer-list.list-view .detail-item.city {
+    grid-area: city;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .customer-list.list-view .detail-item.factory {
+    grid-area: branch;
+    justify-content: flex-end;
+    font-size: 13px;
+  }
+}
+
+/* MOBILE LAYOUT ADJUSTMENTS */
+@media (max-width: 768px) {
+  .search-header-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Make the filter group expand to fill width, but keep items localized */
+  .filter-sync-group {
+    width: 100%;
+    justify-content: space-between;
+    /* Space out Branch and Sync */
+  }
+
+  .branch-select {
+    flex: 1;
+    /* Branch takes available space */
+    min-width: 0;
+  }
+
+  /* Sync button stays fixed size (compact) */
+
+  /* Search input stacks below and takes full width */
+  .search-input-wrapper {
+    width: 100%;
+  }
+}
+
+/* Floating Scan Button Base Styles */
+.floating-scan-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+  /* Standard accessible position */
+  background: var(--primary-gold);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  z-index: 100;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.floating-scan-btn:hover {
+  transform: scale(1.1);
+  background: var(--primary-gold-dark);
+}
+
+.floating-scan-btn:active {
+  transform: scale(0.95);
+}
+
+/* --- CARD COMPONENT --- */
+
+.customer-card {
+  padding: 15px;
+  /* Compact padding */
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.customer-card:hover {
+  border-color: var(--primary-gold);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.customer-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary-gold);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.customer-card:hover::before {
+  opacity: 1;
+}
+
+.customer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+.customer-id {
+  font-weight: 800;
+  color: var(--primary-gold-dark);
+  font-size: 13px;
+  text-transform: uppercase;
+  background: #fffdf0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.customer-name {
+  font-weight: 700;
+  color: #333;
+  font-size: 15px;
+}
+
+.customer-details p {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Modal Styles (Unchanged) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--primary-gold);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 1px solid #eee;
+  background: #fcfcfc;
+}
+
+.modal-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--premium-black);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--premium-black);
+  transform: rotate(90deg);
+}
+
+.modal-tabs {
+  display: flex;
+  background-color: #f1f2f6;
+  padding: 6px;
+  gap: 5px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.tab-btn:hover {
+  color: var(--premium-black);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.tab-btn.active {
+  color: var(--premium-black);
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  font-weight: 800;
+}
+
+.modal-body {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  background: #fff;
+}
+
+.customer-detail {
+  text-align: left;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--primary-gold) 0%, var(--primary-gold-dark) 100%);
+  color: var(--premium-black);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 20px;
+  box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+}
+
+.loading,
+.no-data {
+  text-align: center;
+  color: #666;
+  padding: 40px 20px;
+}

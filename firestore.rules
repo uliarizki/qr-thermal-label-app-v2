@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles
+      allow read: if isAuthenticated();
+      
+      // Only admins can create new users
+      allow create: if isAdmin();
+      
+      // Users can update their own profile, admins can update anyone
+      allow update: if isAdmin() || isOwner(userId);
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Customers collection
+    match /customers/{customerId} {
+      // Anyone authenticated can read customers
+      allow read: if isAuthenticated();
+      
+      // Anyone authenticated can create customers
+      allow create: if isAuthenticated();
+      
+      // Only admins can update or delete customers
+      allow update, delete: if isAdmin();
+    }
+    
+    // History/Activity logs collection
+    match /history/{historyId} {
+      // Only admins can read history
+      allow read: if isAdmin();
+      
+      // Anyone authenticated can create history entries
+      allow create: if isAuthenticated();
+      
+      // History is immutable - no updates or deletes allowed
+      allow update, delete: if false;
+    }
+    
+    // Attendance/Guest book collection (if needed)
+    match /attendance/{attendanceId} {
+      // Anyone authenticated can read attendance
+      allow read: if isAuthenticated();
+      
+      // Anyone authenticated can create attendance records
+      allow create: if isAuthenticated();
+      
+      // Only admins can update or delete attendance
+      allow update, delete: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,6 @@
+Name	City	ID
+Test User 001	Jakarta	ID001
+Test User 002	Bandung	ID002
+Test User 003	Surabaya	ID003
+Test User 004	Medan	ID004
+Test User 005	Semarang	ID005

@@ -1,0 +1,236 @@
+/* DigitalCard.css (Premium Gold Edition with Brush Font) */
+
+.digital-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    background: transparent;
+}
+
+.digital-card {
+    position: relative;
+    width: 500px;
+    height: 300px;
+    border-radius: 16px;
+    overflow: hidden;
+    /* DEEP BLUE & SILVER THEME (Adapted from Reference) */
+    background: url('/assets/card-bg-blue.jpg') no-repeat center center;
+    background-size: cover;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    /* justify-content: space-between; REMOVED to allow natural flow or use gap */
+    border: 2px solid #D4AF37;
+    padding-bottom: 20px;
+    /* Add padding at bottom since footer is gone */
+}
+
+/* Abstract Wave/Curve Overlay - DISABLED as we use image now */
+.card-overlay {
+    /* Reactivated: Minimal dark overlay to ensure text contrast against busy patterns */
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Gradient from Right (Darker, where text is) to Left (Lighter, where QR is) */
+    background: linear-gradient(to left, rgba(0, 5, 20, 0.7) 0%, rgba(0, 10, 30, 0.4) 50%, rgba(0, 0, 0, 0.1) 100%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Header */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    z-index: 1;
+    /* Removed heavy border, kept subtle if needed or just remove */
+    /* border-bottom: 1px solid rgba(212, 175, 55, 0.2); */
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    filter: contrast(1.2);
+    background: white;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.brand-name {
+    font-family: var(--font-brand);
+    font-weight: 400;
+    font-size: 1.6rem;
+    color: #FFD700;
+    /* Brighter Gold */
+    /* Enhanced text shadow for brand */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    margin-top: 5px;
+}
+
+.card-type {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.95);
+    color: #002855;
+    /* Match theme blue */
+    padding: 6px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    border: 1px solid #D4AF37;
+}
+
+/* Body */
+.card-body {
+    display: flex;
+    flex: 1;
+    padding: 10px 30px 20px 30px;
+    /* Adjusted padding */
+    align-items: center;
+    /* Center vertically */
+    z-index: 1;
+    gap: 20px;
+}
+
+.info-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Optional: very subtle highlight behind text if needed, currently relying on gradient overlay */
+    text-align: left;
+    /* REVERTED TO LEFT */
+}
+
+.customer-name-large {
+    margin: 0 0 20px 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #fff;
+    /* Stronger drop shadow for maximum readability */
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 0, 0, 0.8);
+    line-height: 1.1;
+    letter-spacing: 0.5px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    /* Increased gap for better breathing */
+    justify-items: start;
+    /* Align items to start/left */
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Align labels and values to left */
+}
+
+.info-item label {
+    font-size: 0.6rem;
+    color: #FCD34D;
+    /* Lighter Amber/Gold */
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.info-item span {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Enhanced text shadow */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* QR Section */
+.qr-section-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.qr-box {
+    background: white;
+    padding: 8px;
+    border-radius: 12px;
+    /* Soft shadow to lift it off the BG */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    border: 3px solid #D4AF37;
+    /* Stronger gold border */
+}
+
+.scan-me {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: #FCD34D;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    opacity: 1;
+}
+
+/* === RESPONSIVE SCALING FOR MOBILE === */
+@media (max-width: 540px) {
+    .digital-card {
+        transform: scale(0.7);
+        transform-origin: top center;
+        margin-bottom: -90px;
+    }
+}
+
+@media (max-width: 400px) {
+    .digital-card {
+        transform: scale(0.58);
+        transform-origin: top center;
+        margin-bottom: -120px;
+    }
+}
+
+/* Watermark Security Pattern */
+.watermark-layer {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    /* Diagonal repeating SVG: Star + BINTANG MAS */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='rgba(255, 215, 0, 0.1)' font-family='Brush Script MT, cursive' text-anchor='middle' transform='rotate(-45 75 75)'%3EBintang Mas%3C/text%3E%3C/svg%3E");
+    background-repeat: repeat;
+    transform: rotate(15deg);
+    background-position: -100px 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+    /* Further reduced opacity */
+}
+
+/* Ensure content stays above watermark */
+.card-header {
+    position: relative;
+    z-index: 5;
+}

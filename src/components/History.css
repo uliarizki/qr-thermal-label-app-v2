@@ -1,0 +1,230 @@
+/* src/components/History.css */
+.history-container {
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+}
+
+.history-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.history-header-section h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.history-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.history-filter {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.history-filter:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.clear-history-btn {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.clear-history-btn:hover {
+  background: #dc2626;
+}
+
+.clear-confirm {
+  background: #fef3c7;
+  border: 2px solid #fbbf24;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.clear-confirm p {
+  margin: 0 0 12px 0;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.clear-confirm-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.confirm-btn {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.confirm-btn:hover {
+  background: #dc2626;
+}
+
+.cancel-btn {
+  padding: 8px 16px;
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cancel-btn:hover {
+  background: #d1d5db;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.history-empty p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.history-empty-hint {
+  font-size: 14px;
+  color: #999;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.history-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* Sedikit lebih shadow */
+}
+
+.history-item.clickable {
+  cursor: pointer;
+  border-left: 4px solid #D4AF37;
+  /* Gold indicator */
+}
+
+.history-item.clickable:active {
+  transform: translateY(1px);
+}
+
+.history-tap-hint {
+  font-size: 11px;
+  color: #D4AF37;
+  margin-top: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.history-item.clickable:hover .history-tap-hint {
+  opacity: 1;
+}
+
+.history-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.history-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-action {
+  font-weight: 600;
+  color: #333;
+  font-size: 15px;
+}
+
+.history-time {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.history-details {
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.history-id {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.history-result {
+  color: #059669;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .history-header-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .history-controls {
+    flex-direction: column;
+  }
+
+  .history-filter,
+  .clear-history-btn {
+    width: 100%;
+  }
+}

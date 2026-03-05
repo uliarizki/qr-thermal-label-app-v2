@@ -1,0 +1,189 @@
+/* PrinterGuide.css - Content Styling Only (Outer Modal uses global .modal-* classes) */
+
+/* Content Wrapper */
+.guide-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    background: #f8fafc;
+}
+
+/* Typography override for Guide Content */
+.guide-content h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    color: #333;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+/* Method Grid (Overview) */
+.method-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.method-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s;
+}
+
+.method-card:hover {
+    border-color: #D4AF37;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.method-card h4 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+}
+
+.method-card p {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge.gold {
+    background: #fffdf5;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+}
+
+.badge.gray {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Info Box */
+.info-box {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #3b82f6;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.info-box.warning {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.info-box h4 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-box ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.info-box li {
+    color: #475569;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+/* Step List */
+.step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.step-item {
+    display: flex;
+    gap: 16px;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.step-num {
+    width: 32px;
+    height: 32px;
+    background: #eff6ff;
+    color: #2563eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.step-body h4 {
+    margin: 0 0 4px 0;
+    color: #333;
+    font-size: 15px;
+}
+
+.step-body p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Download Button */
+.btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid #bfdbfe;
+    transition: all 0.2s;
+    margin-top: 10px;
+}
+
+.btn-download:hover {
+    background: #dbeafe;
+    transform: translateY(-1px);
+}
+
+/* FAQ */
+.faq-item {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+}
+
+.faq-item h4 {
+    color: #dc2626;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

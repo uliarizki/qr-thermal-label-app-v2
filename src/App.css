@@ -1,0 +1,512 @@
+@import url('https://fonts.googleapis.com/css2?family=Satisfy&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* BRANDING: BINTANG MAS (Gold & Premium Dark) */
+  --primary-gold: #D4AF37;
+  /* Metallic Gold */
+  --primary-gold-dark: #B59024;
+  /* Darker Gold for Hover */
+  --premium-black: #111111;
+  /* Deepest Black */
+  --premium-dark: #1f2937;
+  /* Soft Dark (Charcoal) */
+  --text-on-gold: #000000;
+  --text-on-dark: #ffffff;
+
+  --bg-color: #f3f4f6;
+  /* Neutral Gray */
+  --card-bg: #ffffff;
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-brand: 'Brush Script MT', 'Brush Script Std', 'Satisfy', cursive;
+  /* Prioritize System Font */
+  /* UPDATED: Brush Style Font */
+  /* NEW BRAND FONT */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--premium-dark);
+  -webkit-font-smoothing: antialiased;
+
+
+}
+
+.app-container {
+  width: 100%;
+  /* Force Full Width */
+  max-width: 100%;
+  /* Full Width Canvas */
+  margin: 0 auto;
+  background-color: white;
+  min-height: 100dvh;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+}
+
+/* === HEADER (Gold Standard) === */
+.app-header {
+  background: #1a1a1a;
+  color: var(--primary-gold);
+  padding: 12px 24px;
+  position: relative;
+  border-bottom: 2px solid var(--primary-gold);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 101;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+/* FIXED: Logo Size Constraints */
+.nav-logo,
+.header-logo {
+  height: 50px;
+  /* Fixed height for header */
+  width: auto;
+  /* Maintain aspect ratio */
+  object-fit: contain;
+  /* Removed background: white to support transparency */
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.3));
+  /* Subtle Gold Glow */
+}
+
+.header-text h1 {
+  font-family: var(--font-brand);
+  /* APPLYING BRAND FONT */
+  font-size: 24px;
+  /* Slightly larger for script font readability */
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+  letter-spacing: 0.5px;
+  /* Script fonts need less negative spacing */
+}
+
+.header-text p {
+  font-size: 10px;
+  opacity: 0.6;
+  color: var(--primary-gold);
+  letter-spacing: 1px;
+  font-weight: 500;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* User Profile Badge */
+.user-name {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === NAVIGATION ABSOLUTE PREMIUM === */
+.tab-navigation {
+  display: flex;
+  background: white;
+  padding: 0 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  justify-content: center;
+  border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+  flex: 1;
+  max-width: 140px;
+  padding: 12px 10px;
+  background: white;
+  border: none;
+  border-bottom: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #94a3b8;
+  /* Slate 400 */
+}
+
+.tab-btn span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tab-btn:hover {
+  background: #f8fafc;
+}
+
+.tab-btn.active {
+  background: #fff;
+  border-bottom-width: 3px;
+}
+
+/* Color Coding for Tabs */
+.tab-btn.scan.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+/* Blue */
+.tab-btn.search.active {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+}
+
+/* Purple */
+.tab-btn.add.active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+}
+
+/* Emerald */
+.tab-btn.history.active {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+}
+
+/* Amber */
+.tab-btn.admin.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+}
+
+/* Rose */
+.tab-btn.event.active {
+  color: #e11d48;
+  border-bottom-color: #e11d48;
+}
+
+/* Gold */
+
+.tab-btn.scan:hover {
+  color: #3b82f6;
+}
+
+.tab-btn.search:hover {
+  color: #8b5cf6;
+}
+
+.tab-btn.add:hover {
+  color: #10b981;
+}
+
+.tab-btn.history:hover {
+  color: #f59e0b;
+}
+
+.tab-btn.event:hover {
+  color: #e11d48;
+}
+
+.tab-btn.admin:hover {
+  color: #d4af37;
+}
+
+/* === CONTENT & CARDS === */
+.app-content {
+  padding: 30px 20px;
+  background: #f8f9fa;
+  min-height: calc(100vh - 200px);
+}
+
+.page-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 30px;
+  margin: 0 auto;
+  /* FLUID WIDTH LOGIC */
+  width: 95%;
+  /* Occupy 95% of available screen width */
+  max-width: 1920px;
+  /* Cap only at 4K screens */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === BUTTONS (GOLD STANDARD) === */
+button {
+  font-family: var(--font-family);
+}
+
+/* === LOGIN SCREEN === */
+.login-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  /* Dark BG */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Simple sheen effect for login background */
+.login-screen::before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 40%);
+  top: -50%;
+  left: -50%;
+  /* animation: rotate 20s linear infinite; REMOVED to prevent flickering */
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  /* Gold Border */
+  text-align: center;
+  width: 100%;
+  max-width: 360px;
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+
+.login-card h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: var(--primary-gold);
+}
+
+.login-btn {
+  background: linear-gradient(135deg, var(--primary-gold) 0%, var(--primary-gold-dark) 100%);
+  color: var(--premium-black);
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  width: 100%;
+  margin-top: 20px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.login-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+
+/* === RESPONSIVE === */
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .page-card {
+    padding: 15px;
+    /* Less padding on mobile card */
+  }
+
+  .app-header {
+    padding: 12px 16px;
+    /* Compact padding */
+    flex-direction: row;
+    /* KEEP ROW: Left (Logo) - Right (User) */
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-brand {
+    width: auto;
+    /* Allow shrink */
+    justify-content: flex-start;
+  }
+
+  .app-header h1 {
+    font-size: 18px;
+    /* Slightly smaller Title */
+    margin: 0;
+  }
+
+  /* Reduce User Info Size */
+  .user-info-section {
+    width: auto;
+    justify-content: flex-end;
+    border-top: none;
+    /* Remove separator */
+    padding-top: 0;
+  }
+
+  .user-name {
+    margin: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 80px;
+    /* Truncate name if too long */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+  }
+
+  /* Hide "Keluar" Text - Icon Only */
+  .logout-btn span {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 8px;
+    /* Square button */
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-btn span {
+    font-size: 10px;
+  }
+
+  .tab-btn {
+    padding: 8px 4px;
+    gap: 4px;
+  }
+
+  .tab-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* iOS Input Zoom Fix */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* Global Watermark Overlay - Fixed on top of everything */
+.global-watermark-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 9999;
+  pointer-events: none;
+  /* Opacity 6% black fill, widely spaced, smaller text */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Ctext x='50%25' y='50%25' font-size='18' fill='rgba(0, 0, 0, 0.08)' font-family='Brush Script MT, cursive' text-anchor='middle' transform='rotate(-30 150 150)'%3EBintang Mas%3C/text%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: multiply;
+}
+
+/* Global Mobile Optimizations */
+@media (max-width: 600px) {
+
+  /* Enforce touch target size */
+  button,
+  input,
+  select,
+  .tab-btn,
+  .action-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+    /* Disable double-tap zoom delay */
+  }
+
+  /* Adjust page container padding */
+  .app-content {
+    padding: 16px 12px;
+  }
+}
+
+/* Utility: Table Row Hover */
+.table-row-hover:hover {
+  background-color: #fcfcfc;
+  transition: background-color 0.2s;
+}
+
+/* === GLOBAL BUTTONS === */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, var(--primary-gold) 0%, var(--primary-gold-dark) 100%);
+  color: var(--premium-black);
+  border: none;
+  box-shadow: 0 4px 6px rgba(212, 175, 55, 0.2);
+}
+
+.action-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(212, 175, 55, 0.3);
+}
+
+.action-btn.secondary {
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.action-btn.secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.action-btn.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.action-btn.danger:hover {
+  background: #fecaca;
+}
