@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QRScanner from './QRScanner';
-import { checkInCustomer, addAndCheckIn, getAttendanceList } from '../utils/googleSheets';
+import { checkInCustomer, addAndCheckIn, listenAttendance } from '../utils/googleSheets';
 import { toast } from 'react-hot-toast';
 import '../App.css';
 import GuestBookList from './GuestBookList';
@@ -36,12 +36,24 @@ export default function GuestBook() {
         return now.toISOString().split('T')[0]; // YYYY-MM-DD
     });
 
-    // Load attendance when switching to list
+    // Listen to attendance automatically when in list tab or filter changes
     useEffect(() => {
-        if (activeTab === 'list') {
-            fetchAttendance();
+        let unsubscribe;
+        if (activeTab === 'list' && filterDate) {
+            setLoading(true);
+            unsubscribe = listenAttendance(filterDate, (res) => {
+                setLoading(false);
+                if (res.success) {
+                    setAttendees(res.data);
+                } else {
+                    toast.error('Gagal sinkronisasi data hadir: ' + res.error);
+                }
+            });
         }
-    }, [activeTab]);
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [activeTab, filterDate]);
 
     // SMART SEARCH LOGIC (Unified with CustomerSearch)
     useEffect(() => {
@@ -92,15 +104,10 @@ export default function GuestBook() {
         setSearchResults(results);
     }, [searchQuery, customers]);
 
-    const fetchAttendance = async () => {
-        setLoading(true);
-        const res = await getAttendanceList();
-        setLoading(false);
-        if (res.success) {
-            setAttendees(res.data);
-        } else {
-            toast.error('Gagal memuat data: ' + res.error);
-        }
+    // Keep dummy fetchAttendance for manual refresh btn if needed
+    const fetchAttendance = () => {
+        // Now handled by real-time listener, but user can unmount/remount tab to force refresh if they really want, or we just do nothing
+        toast.success("Real-time live mode aktif.");
     };
 
     const handleScan = async (data) => {
@@ -123,7 +130,7 @@ export default function GuestBook() {
             const res = await checkInCustomer(customer);
             if (res.success) {
                 toast.success(`Hadir: ${customer.nama} (${customer.kota}) di ${customer.cabang}`, { id: toastId, duration: 4000 });
-                if (activeTab === 'list') fetchAttendance(); // Refresh list if visible
+                // No need to call let list update since onSnapshot handles it!
             } else {
                 toast.error(`Gagal: ${res.error}`, { id: toastId, duration: 5000 });
             }

@@ -6,11 +6,14 @@ import AdminLogs from './AdminLogs';
 import { Icons } from './Icons';
 import { saveAs } from 'file-saver';
 import { useCustomer } from '../context/CustomerContext';
+import { migrateDataToFirestore } from '../utils/googleSheets';
 
 export default function AdminPanel() {
     const { user } = useAuth();
     const { customers } = useCustomer();
     const [activeTab, setActiveTab] = useState('users');
+    const [migrationStatus, setMigrationStatus] = useState(null);
+    const [isMigrating, setIsMigrating] = useState(false);
 
     if (user?.role !== 'admin') {
         return (
@@ -32,6 +35,24 @@ export default function AdminPanel() {
         } catch (error) {
             console.error("Export failed:", error);
             alert("Export failed: " + error.message);
+        }
+    };
+
+    const handleMigration = async () => {
+        if (!window.confirm("Are you sure you want to migrate data from Google Sheets to Firestore? This might duplicate data if run multiple times.")) return;
+
+        setIsMigrating(true);
+        setMigrationStatus({ status: 'starting', message: 'Initializing migration...' });
+
+        const result = await migrateDataToFirestore((progress) => {
+            setMigrationStatus(progress);
+        });
+
+        setIsMigrating(false);
+        if (result.success) {
+            alert(`✅ Migration Complete! ${result.count} customers imported.`);
+        } else {
+            alert(`❌ Migration Failed: ${result.error}`);
         }
     };
 
@@ -121,6 +142,56 @@ export default function AdminPanel() {
                                         <div style={{ color: '#64748b', fontSize: 13, background: 'white', padding: '8px 12px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
                                             <strong>{customers.length}</strong> records ready
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: 20, padding: 24, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+                                <div style={{
+                                    minWidth: 50, height: 50,
+                                    background: '#fef08a', color: '#854d0e',
+                                    borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <Icons.Database size={24} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h3 style={{ marginTop: 0, color: '#0f172a' }}>Database Migration</h3>
+                                    <p style={{ color: '#475569', lineHeight: 1.5 }}>
+                                        Migrate all 2000+ rows from Google Sheets API directly to Cloud Firestore. Only click this ONCE.
+                                    </p>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 15, marginTop: 20 }}>
+                                        <button
+                                            onClick={handleMigration}
+                                            disabled={isMigrating}
+                                            className="action-btn"
+                                            style={{
+                                                padding: '10px 24px',
+                                                background: isMigrating ? '#ccc' : '#ef4444',
+                                                color: 'white',
+                                                border: 'none',
+                                                cursor: isMigrating ? 'not-allowed' : 'pointer'
+                                            }}
+                                        >
+                                            <Icons.Database size={18} /> {isMigrating ? 'Migrating Data...' : 'Start Migration (Sheets to Firestore)'}
+                                        </button>
+
+                                        {migrationStatus && (
+                                            <div style={{
+                                                padding: 12,
+                                                background: migrationStatus.status === 'error' ? '#fee2e2' : '#dcfce7',
+                                                color: migrationStatus.status === 'error' ? '#991b1b' : '#166534',
+                                                borderRadius: 6,
+                                                fontSize: 14
+                                            }}>
+                                                {migrationStatus.status === 'fetching' && '⏳ '}
+                                                {migrationStatus.status === 'processing' && '⚙️ '}
+                                                {migrationStatus.status === 'progress' && '📦 '}
+                                                {migrationStatus.status === 'done' && '✅ '}
+                                                {migrationStatus.status === 'error' && '❌ '}
+                                                {migrationStatus.message}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

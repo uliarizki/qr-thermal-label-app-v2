@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { getCustomers, getCachedCustomers } from '../utils/googleSheets';
+import { getCustomers, getCachedCustomers, listenCustomers } from '../utils/googleSheets';
 import { useAuth } from './AuthContext';
 
 const CustomerContext = createContext();
@@ -39,7 +39,7 @@ export function CustomerProvider({ children }) {
 
         try {
             // Force reload = true
-            const result = await getCustomers(true);
+            const result = await getCustomers();
 
             if (result.success) {
                 setCustomers(result.data || []);
@@ -100,35 +100,25 @@ export function CustomerProvider({ children }) {
         setSelectedCustomer(displayCustomer);
     }, [syncCustomers]);
 
-    // -- Effects --
-
-    // Run initial sync on mount
-    useEffect(() => {
-        syncCustomers(true);
-    }, [syncCustomers]);
-
-    // 1. Auto-Sync Strategy (Interval + Focus)
+    // Run initial sync on mount and set up real-time listener
     useEffect(() => {
         if (!user) return;
 
-        // Initial silent sync on mount if stale? 
-        // For now, relies on cache, but maybe we want a fresh fetch on load?
-        // syncCustomers(true);
+        setIsSyncing(true);
+        const unsubscribe = listenCustomers((result) => {
+            if (result.success) {
+                setCustomers(result.data || []);
+                setLastUpdated(new Date());
+                setIsSyncing(false); // Stop loading indicator once data is received
+            } else {
+                console.error('Real-time sync error:', result.error);
+                setIsSyncing(false);
+            }
+        });
 
-        const intervalId = setInterval(() => {
-            syncCustomers(true);
-        }, 5 * 60 * 1000); // 5 mins
-
-        const handleFocus = () => {
-            syncCustomers(true);
-        };
-
-        window.addEventListener('focus', handleFocus);
-        return () => {
-            clearInterval(intervalId);
-            window.removeEventListener('focus', handleFocus);
-        };
-    }, [user, syncCustomers]);
+        // Cleanup listener on unmount
+        return () => unsubscribe();
+    }, [user]);
 
 
     const value = {

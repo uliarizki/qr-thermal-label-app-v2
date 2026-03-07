@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { getGlobalHistory } from '../utils/googleSheets';
+import { listenGlobalHistory } from '../utils/googleSheets';
 import { useAuth } from '../context/AuthContext';
 import { Icons } from './Icons'; // Unified Icons
 
@@ -9,25 +9,28 @@ export default function AdminLogs() {
     const [history, setHistory] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
 
-    const loadHistory = async () => {
-        setLoadingHistory(true);
-        const res = await getGlobalHistory(user.role);
-        setLoadingHistory(false);
-        if (res.success) {
-            setHistory(res.data);
-        } else {
-            // Check for backend missing function
-            if (res.error && res.error.includes('Unknown action')) {
-                toast.error('Backend script missing "getGlobalHistory". Update Google Apps Script.');
-            } else {
-                toast.error('Gagal load history: ' + res.error);
-            }
-        }
-    };
-
     useEffect(() => {
-        loadHistory();
-    }, []);
+        if (!user || !user.role) return;
+        setLoadingHistory(true);
+        const unsubscribe = listenGlobalHistory(user.role, (res) => {
+            setLoadingHistory(false);
+            if (res.success) {
+                setHistory(res.data);
+            } else {
+                if (res.error && res.error.includes('Unknown action')) {
+                    toast.error('Backend script missing "listenGlobalHistory". Update Google Apps Script.');
+                } else {
+                    toast.error('Gagal load history: ' + res.error);
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const loadHistory = () => {
+        toast.success("Real-time live mode aktif.");
+    };
 
     // Helper to render details column
     const renderDetails = (row) => {

@@ -1,7 +1,7 @@
-import { addDoc, doc, getDocs, updateDoc, deleteDoc, query, where, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { addDoc, doc, getDocs, updateDoc, deleteDoc, query, where, getDoc, setDoc, serverTimestamp, Timestamp, writeBatch, onSnapshot } from "firebase/firestore";
 import { attendance, customers, db, history, users } from "../config/firebase";
 import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getHistory } from "./history";
+import { getHistory, listenHistory } from "./history";
 
 // API URL from environment variable (see .env file)
 const WEB_APP_URL = import.meta.env.VITE_GAS_WEBAPP_URL;
@@ -80,20 +80,6 @@ async function callApi(action, payload = null) {
   }
 }
 
-function formatCustomer(row) {
-  return {
-    no: row.no,
-    id: row.id,
-    nama: row.nama,
-    kota: row.kota,
-    sales: row.sales,
-    pabrik: row.pabrik,
-    cabang: row.cabang,
-    telp: row.telp,
-    kode: row.kode,
-  };
-}
-
 // === EXPORTS ===
 
 /* --- AUTHENTICATION API --- */
@@ -147,6 +133,23 @@ export async function getUsers(role) {
   } // await callApi('getUsers', { role });
 }
 
+export function listenUsers(role, callback) {
+  if (role !== 'admin') {
+    callback({ success: false, error: 'Unauthorized' });
+    return () => { };
+  }
+
+  return onSnapshot(users, (snapshot) => {
+    callback({
+      success: true,
+      data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    });
+  }, (error) => {
+    console.error('Error in listenUsers:', error);
+    callback({ success: false, error: error.message });
+  });
+}
+
 export async function deleteUser(username, role, targetUser) {
   if (role !== 'admin')
     return { success: false, error: 'Unauthorized' }
@@ -194,6 +197,12 @@ export async function getGlobalHistory(userRole) {
   } // await callApi('getGlobalHistory', { userRole });
 }
 
+export function listenGlobalHistory(userRole, callback) {
+  return listenHistory(userRole, (data) => {
+    callback({ success: true, data });
+  });
+}
+
 /* --- GUEST BOOK / ATTENDANCE --- */
 
 export async function checkInCustomer(customer) {
@@ -204,7 +213,7 @@ export async function checkInCustomer(customer) {
   }// await callApi('checkIn', { customer });
 }
 
-export const uppercasedCustomer = (customer) => Object.fromEntries(Object.entries(customer).map(([k, v]) => (k !== 'id' && k !== 'kode' && k !== 'telp') ? [k, (v || "").trim().toUpperCase()] : [k, v])) 
+export const uppercasedCustomer = (customer) => Object.fromEntries(Object.entries(customer).map(([k, v]) => (k !== 'id' && k !== 'kode' && k !== 'telp') ? [k, (v || "").trim().toUpperCase()] : [k, v]))
 
 export async function addAndCheckIn(customer) {
   const customerQuery = query(customers, where('id', '==', customer.id))
@@ -227,6 +236,28 @@ export async function getAttendanceList() {
     success: true,
     data: attendances.docs.map(doc => ({ ...doc.data(), timestamp: doc.data().timestamp.toDate() }))
   }// await callApi('getAttendance');
+}
+
+export function listenAttendance(dateString, callback) {
+  const targetDate = dateString ? new Date(dateString) : new Date();
+  const start = new Date(targetDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(targetDate);
+  end.setHours(23, 59, 59, 999);
+
+  const startTimestamp = Timestamp.fromDate(start);
+  const endTimestamp = Timestamp.fromDate(end);
+  const q = query(attendance, where('timestamp', '>=', startTimestamp), where('timestamp', '<=', endTimestamp));
+
+  return onSnapshot(q, (snapshot) => {
+    callback({
+      success: true,
+      data: snapshot.docs.map(doc => ({ ...doc.data(), timestamp: doc.data().timestamp.toDate() }))
+    });
+  }, (error) => {
+    console.error('Error in listenAttendance:', error);
+    callback({ success: false, error: error.message });
+  });
 }
 
 /* --- CUSTOMER DATA --- */
@@ -270,6 +301,7 @@ export async function getCustomers(forceReload = false) {
       return { success: true, data: cached, source: 'cache' };
     }
   }
+  console.log('test')
 
   // 2. Fetch from API
   // const result = await callApi('getCustomers');
@@ -310,6 +342,43 @@ export async function getCustomers(forceReload = false) {
   }
 
   return { success: false, error: result.error };
+}
+
+// Mendengarkan perubahan data customer secara real-time
+export function listenCustomers(callback) {
+  return onSnapshot(customers, (snapshot) => {
+    if (!snapshot.empty) {
+      const formattedData = snapshot.docs.map(customer => ({
+        no: customer.data().no,
+        id: customer.data().id,
+        nama: customer.data().nama,
+        kota: customer.data().kota,
+        sales: customer.data().sales,
+        pabrik: customer.data().pabrik,
+        cabang: customer.data().cabang,
+        telp: customer.data().telp,
+        kode: customer.data().kode
+      }));
+
+      // Update Memory & LocalStorage
+      customerCache = formattedData;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(formattedData));
+          localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        } catch (e) {
+          console.error('❌ Failed to save to localStorage', e);
+        }
+      }
+
+      callback({ success: true, data: formattedData, source: 'realtime' });
+    } else {
+      callback({ success: true, data: [], source: 'realtime' });
+    }
+  }, (error) => {
+    console.error('Error in listenCustomers:', error);
+    callback({ success: false, error: error.message });
+  });
 }
 
 // Tambah customer baru
@@ -388,5 +457,55 @@ export function clearCache() {
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
     window.location.reload()
+  }
+}
+
+// ==========================================
+// PHASE 3: ONE-TIME DATA MIGRATION
+// ==========================================
+export async function migrateDataToFirestore(onProgress) {
+  try {
+    if (onProgress) onProgress({ status: 'fetching', message: 'Fetching data from Google Sheets API...' });
+
+    // Call the original getCustomers action from apps script
+    const result = await callApi('getCustomers');
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch from Google Sheets');
+    }
+
+    const sheetCustomers = result.data.filter(customer => customer.id !== "");
+    if (!Array.isArray(sheetCustomers) || sheetCustomers.length === 0) {
+      throw new Error('No data found in Google Sheets');
+    }
+
+    if (onProgress) onProgress({ status: 'processing', message: `Found ${sheetCustomers.length} customers. Starting migration...` });
+
+    const CHUNK_SIZE = 400; // Firestore batch limit is 500
+    let count = 0;
+
+    for (let i = 0; i < sheetCustomers.length; i += CHUNK_SIZE) {
+      const chunk = sheetCustomers.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+
+      for (const customer of chunk) {
+        // Prepare data mimicking addCustomer formatting
+        // Keep initial 'id' so that the structure is maintained, but doc() generates a new doc id.
+        // Or if 'id' from google sheets matters, use it. But in previous code addCustomer ignores it.
+
+        // Use auto-id reference
+        const docRef = doc(customers);
+        batch.set(docRef, customer);
+      }
+
+      await batch.commit();
+      count += chunk.length;
+      if (onProgress) onProgress({ status: 'progress', message: `Migrating: ${count} / ${sheetCustomers.length}` });
+    }
+
+    if (onProgress) onProgress({ status: 'done', message: `Successfully migrated ${count} customers.` });
+    return { success: true, count };
+  } catch (error) {
+    if (onProgress) onProgress({ status: 'error', message: `Error: ${error.message}` });
+    return { success: false, error: error.message };
   }
 }

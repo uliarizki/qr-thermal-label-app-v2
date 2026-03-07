@@ -2,7 +2,7 @@
 // Utility untuk manage history di localStorage
 
 // import { addHistoryToDB, getHistoryFromDB, initDB } from './db'; // DISABLED due to stability issues
-import { deleteDoc, getDocs, orderBy, query } from 'firebase/firestore';
+import { deleteDoc, getDocs, orderBy, query, onSnapshot } from 'firebase/firestore';
 import { logActivity } from './googleSheets'; // Import Cloud Logger
 import { history } from '../config/firebase';
 
@@ -75,6 +75,41 @@ export async function getHistory(role) {
   } catch (error) {
     console.error('Error reading history locally:', error);
     return [];
+  }
+}
+
+export function listenHistory(role, callback) {
+  if (typeof window === 'undefined') return () => { };
+
+  if (role === 'admin') {
+    const q = query(history, orderBy('timestamp', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        action: doc.data().activity,
+        timestamp: doc.data().timestamp?.toDate(),
+        details: doc.data().details,
+        username: doc.data().user
+      }));
+      callback(data);
+    }, (error) => {
+      console.error('Error listening to history:', error);
+      callback([]);
+    });
+  } else {
+    // For non-admin, local storage
+    const str = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const data = typeof str === 'string' ? JSON.parse(str) : (str || []);
+    const arr = Array.isArray(data) ? data : [];
+    callback(arr);
+
+    // Simplistic local storage listener for same-tab updates
+    const intervalId = setInterval(() => {
+      const newStr = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const newData = typeof newStr === 'string' ? JSON.parse(newStr) : (newStr || []);
+      callback(Array.isArray(newData) ? newData : []);
+    }, 5000);
+
+    return () => clearInterval(intervalId);
   }
 }
 

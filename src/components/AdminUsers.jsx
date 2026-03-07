@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { registerUser, getUsers, deleteUser } from '../utils/googleSheets';
+import { registerUser, listenUsers, deleteUser } from '../utils/googleSheets';
 import { useAuth } from '../context/AuthContext';
 import { Icons } from './Icons'; // Unified Icons
 
@@ -18,23 +18,31 @@ export default function AdminUsers() {
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [fetchError, setFetchError] = useState(null);
 
-    const loadUsers = async () => {
+    useEffect(() => {
+        if (!user || !user.role) return;
         setLoadingUsers(true);
         setFetchError(null);
-        const res = await getUsers(user.role);
-        setLoadingUsers(false);
-        if (res.success) {
-            setUserList(res.data);
-        } else {
-            // Handle specific "Unknown action" error gracefully
-            const errMsg = res.error || '';
-            if (errMsg.includes('Unknown action')) {
-                setFetchError('Backend script missing "getUsers" function. Please update Google Apps Script.');
+
+        const unsubscribe = listenUsers(user.role, (res) => {
+            setLoadingUsers(false);
+            if (res.success) {
+                setUserList(res.data);
             } else {
-                toast.error('Gagal load users: ' + errMsg);
-                setFetchError(errMsg);
+                const errMsg = res.error || '';
+                if (errMsg.includes('Unknown action')) {
+                    setFetchError('Backend script missing "listenUsers" function. Please update Google Apps Script.');
+                } else {
+                    toast.error('Gagal load users: ' + errMsg);
+                    setFetchError(errMsg);
+                }
             }
-        }
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const loadUsers = () => {
+        toast.success("Real-time live mode aktif.");
     };
 
     const handleCreateUser = async (e) => {
@@ -52,7 +60,7 @@ export default function AdminUsers() {
             toast.success(`User '${newUser}' berhasil dibuat!`);
             setNewUser('');
             setNewPass('');
-            loadUsers(); // Refresh list
+            // No need to loadUsers because onSnapshot will push the new list
         } else {
             toast.error('Gagal: ' + res.error);
         }
@@ -66,16 +74,13 @@ export default function AdminUsers() {
 
         if (res.success) {
             toast.success('User deleted!', { id: toastId });
-            loadUsers();
+            // Automatic update via onSnapshot
         } else {
             toast.error('Gagal hapus: ' + res.error, { id: toastId });
         }
     };
 
-    // Load users on mount
-    useEffect(() => {
-        loadUsers();
-    }, []);
+    // Load users on mount logic replaced by useEffect with listenUsers above
 
     return (
         <div className="admin-users-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
