@@ -33,12 +33,10 @@ export default function AdminLogs() {
     const renderDetails = (row) => {
         let details = row.details;
         try {
-            const parsed = JSON.parse(row.details);
-
             // FORMAT: SEARCH_SELECT
-            if (row.activity === 'SEARCH_SELECT') {
-                const query = parsed.query || '-';
-                const custInfo = parsed.customerId ? `[${parsed.customerId}] ${parsed.customerName}` : parsed.customerName || 'Unknown';
+            if (row.action === 'SEARCH_SELECT') {
+                const query = row.details.query || '-';
+                const custInfo = row.details.customerId ? `[${row.details.customerId}] ${row.details.customerName}` : row.details.customerName || 'Unknown';
                 return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <div style={{ fontSize: 13 }}>
@@ -52,20 +50,20 @@ export default function AdminLogs() {
                 );
             }
             // FORMAT: SCAN
-            else if (row.activity === 'SCAN') {
+            else if (row.action === 'SCAN') {
                 return (
                     <span>
-                        📱 Scan: <span style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '0 4px', borderRadius: 4 }}>{parsed.customerId}</span> <b>{parsed.nama}</b>
+                        📱 Scan: <span style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '0 4px', borderRadius: 4 }}>{row.details.customerId}</span> <b>{row.details.nama}</b>
                     </span>
                 );
             }
             // FORMAT: LOGIN/LOGOUT
-            else if (row.activity === 'LOGIN' || row.activity === 'LOGOUT') {
+            else if (row.action === 'LOGIN' || row.action === 'LOGOUT') {
                 return <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Session Access</span>;
             }
             // FORMAT: REGISTER
-            else if (row.activity === 'REGISTER_USER') {
-                return <span>👤 New User: <b>{parsed.newUser}</b> (Role: {parsed.role})</span>;
+            else if (row.action === 'REGISTER_USER') {
+                return <span>👤 New User: <b>{row.details.newUser}</b> (Role: {row.details.role})</span>;
             }
         } catch (e) {
             // Keep original string if parse fails
@@ -129,14 +127,14 @@ export default function AdminLogs() {
                                             </td>
                                             <td style={{ padding: '10px 15px' }}>
                                                 <span style={{
-                                                    background: row.user === 'admin' ? '#fef3c7' : '#f3f4f6',
-                                                    color: row.user === 'admin' ? '#d97706' : '#4b5563',
+                                                    background: row.username === 'admin' ? '#fef3c7' : '#f3f4f6',
+                                                    color: row.username === 'admin' ? '#d97706' : '#4b5563',
                                                     padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600
                                                 }}>
-                                                    {row.user}
+                                                    {row.username}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '10px 15px', fontWeight: 600, color: '#333' }}>{row.activity}</td>
+                                            <td style={{ padding: '10px 15px', fontWeight: 600, color: '#333' }}>{row.action}</td>
                                             <td style={{ padding: '10px 15px', color: '#444' }}>
                                                 {renderDetails(row)}
                                             </td>

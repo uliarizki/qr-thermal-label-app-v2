@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { getHistory, filterHistoryByAction, clearHistory, formatTimestamp } from '../utils/history';
 import { Icons } from './Icons';
 import './History.css';
+import { useAuth } from '../context/AuthContext';
 
 export default function History({ onSelect }) {
   const [history, setHistory] = useState([]);
   const [filter, setFilter] = useState('ALL');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const { user } = useAuth();
 
   // ... (useEffect and loadHistory same)
 
@@ -23,15 +25,15 @@ export default function History({ onSelect }) {
   const loadHistory = async () => {
     let data;
     if (filter !== 'ALL') {
-      data = await filterHistoryByAction(filter);
+      data = await filterHistoryByAction(filter, user?.role);
     } else {
-      data = await getHistory();
+      data = await getHistory(user?.role);
     }
     setHistory(Array.isArray(data) ? data : []);
   };
 
   const handleClear = () => {
-    clearHistory();
+    clearHistory(user?.role);
     setHistory([]);
     setShowClearConfirm(false);
   };
@@ -57,7 +59,7 @@ export default function History({ onSelect }) {
   };
 
   const renderHistoryItem = (item, index) => {
-    const { timestamp, action, details } = item;
+    const { timestamp, action, details, username } = item;
 
     return (
       <div
@@ -103,6 +105,11 @@ export default function History({ onSelect }) {
                 {details.kota && <span> - {details.kota}</span>}
               </div>
             )}
+            {user.role === 'admin' && (
+              <div>
+                User: <strong>{username || ''}</strong>
+              </div>
+            )}
           </div>
           <div className="history-tap-hint" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Icons.ArrowLeft size={12} style={{ transform: 'rotate(180deg)' }} /> Tap to Open
@@ -144,7 +151,7 @@ export default function History({ onSelect }) {
 
       {showClearConfirm && (
         <div className="clear-confirm">
-          <p>Yakin hapus semua history?</p>
+          <p>Yakin hapus semua history? {user?.role === 'admin' && '(Ini juga akan menghapus history pada database)'}</p>
           <div className="clear-confirm-buttons">
             <button onClick={handleClear} className="action-btn danger">
               Ya, Hapus

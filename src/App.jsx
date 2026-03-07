@@ -7,7 +7,6 @@ import { useNetworkStatus } from './hooks/useNetworkStatus';
 import QRScanner from './components/QRScanner';
 import CustomerSearch from './components/CustomerSearch';
 import AddCustomer from './components/AddCustomer';
-import PrintPreview from './components/PrintPreview.jsx';
 import History from './components/History';
 import Login from './components/Login';
 
@@ -17,8 +16,6 @@ const GuestBook = lazy(() => import('./components/GuestBook'));
 const PrinterGuide = lazy(() => import('./components/PrinterGuide'));
 
 import CustomerDetailModal from './components/CustomerDetailModal';
-import { getLastUpdate, getCachedCustomers } from './utils/googleSheets';
-import { getCustomers } from './services/customerService';
 import { Icons } from './components/Icons';
 import Skeleton from 'react-loading-skeleton'; // Import Skeleton for fallback
 import UpdatePrompt from './components/UpdatePrompt';
@@ -26,7 +23,7 @@ import './App.css';
 
 // Main Inner Component that uses Auth Context
 function MainApp() {
-  const { user, logout, logoutAllDevices, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const { isOnline } = useNetworkStatus();
 
   const getStoredTab = () => {
@@ -39,9 +36,6 @@ function MainApp() {
 
   const {
     customers,
-    isSyncing,
-    lastUpdated,
-    syncCustomers,
     selectedCustomer,
     setSelectedCustomer,
     addCustomerLocal
@@ -227,26 +221,6 @@ function MainApp() {
           >
             🖨️
           </button>
-          {/* SECURE LOGOUT - Hidden until Firebase Migration
-          <button
-            onClick={logoutAllDevices}
-            style={{
-              background: 'transparent',
-              border: '1px solid #f87171',
-              color: '#f87171', // Red warning color
-              padding: '5px 10px',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontSize: 11,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4
-            }}
-            title="Log Out All Other Devices"
-          >
-            <Icons.Shield size={12} /> SECURE LOGOUT
-          </button>
-          */}
           <button
             onClick={logout}
             style={{

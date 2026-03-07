@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
-import { toast } from 'react-hot-toast';
-import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 // import QRCode from 'react-qr-code'; // Removed to prevent lag on huge lists
 

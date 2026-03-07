@@ -1,9 +1,7 @@
-import React from 'react';
 import { Icons } from './Icons'; // Unified Icons
 import '../App.css';
 
 export default function GuestBookForm({
-    showScanner,
     setShowScanner,
     searchQuery,
     setSearchQuery,

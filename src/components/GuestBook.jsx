@@ -8,9 +8,10 @@ import GuestBookForm from './GuestBookForm';
 import { useCustomer } from '../context/CustomerContext'; // UNIFIED DATA SOURCE
 import { Icons } from './Icons'; // Unified Icons
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { generateCustomerId } from '../utils/idGenerator';
 
 export default function GuestBook() {
-    const { customers, syncCustomers, isSyncing } = useCustomer(); // USE CONTEXT
+    const { customers, syncCustomers } = useCustomer(); // USE CONTEXT
     const [activeTab, setActiveTab] = useState('checkin'); // 'checkin' | 'list'
     const { isOnline } = useNetworkStatus();
 
@@ -144,6 +145,7 @@ export default function GuestBook() {
             kota: manualForm.kota,
             cabang: manualForm.cabang,
             telp: manualForm.hp,
+            id: generateCustomerId(manualForm.cabang, customers || [])
         };
 
         try {
@@ -237,7 +239,6 @@ export default function GuestBook() {
                         </>
                     ) : (
                         <GuestBookForm
-                            showScanner={!showManual}
                             setShowScanner={(val) => setShowManual(!val)} // Invert logic for clarity
                             searchQuery={searchQuery}
                             setSearchQuery={setSearchQuery}

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { getCustomers, getCachedCustomers } from '../utils/googleSheets';
 import { useAuth } from './AuthContext';
@@ -17,6 +17,7 @@ export function CustomerProvider({ children }) {
         // Initial load from cache
         return getCachedCustomers() || [];
     });
+
 
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -100,6 +101,11 @@ export function CustomerProvider({ children }) {
     }, [syncCustomers]);
 
     // -- Effects --
+
+    // Run initial sync on mount
+    useEffect(() => {
+        syncCustomers(true);
+    }, [syncCustomers]);
 
     // 1. Auto-Sync Strategy (Interval + Focus)
     useEffect(() => {

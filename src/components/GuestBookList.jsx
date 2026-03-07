@@ -11,11 +11,13 @@ export default function GuestBookList({
     // Filter logic
     const filteredAttendees = attendees.filter(guest => {
         if (!guest.timestamp) return false;
-        const guestDate = new Date(guest.timestamp).toISOString().split('T')[0];
-        return guestDate === filterDate;
+        if (isNaN(guest.timestamp.getTime())) return false;
+        const guestDate = guest.timestamp.toLocaleDateString()
+        return guestDate === (new Date(filterDate).toLocaleDateString());
     });
 
     const isToday = filterDate === new Date().toISOString().split('T')[0];
+    const isValidFilterDate = filterDate && !isNaN(new Date(filterDate).getTime());
 
     return (
         <div className="attendance-list" style={{ padding: 10 }}>
@@ -24,7 +26,9 @@ export default function GuestBookList({
                     Daftar Hadir
                 </h3>
                 <div style={{ fontSize: 13, color: '#666', background: '#f5f5f5', padding: '4px 10px', borderRadius: 20 }}>
-                    {new Date(filterDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {isValidFilterDate
+                        ? new Date(filterDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })
+                        : 'Tanggal Tidak Valid'}
                 </div>
             </div>
 

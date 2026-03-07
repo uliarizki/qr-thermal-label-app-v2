@@ -1,12 +1,16 @@
-// src/utils/googleSheets.js
+import { addDoc, doc, getDocs, updateDoc, deleteDoc, query, where, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { attendance, customers, db, history, users } from "../config/firebase";
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getHistory } from "./history";
 
 // API URL from environment variable (see .env file)
 const WEB_APP_URL = import.meta.env.VITE_GAS_WEBAPP_URL;
-// Feature Guest Book: Attendance
+
 const CACHE_ATTENDANCE_KEY = 'qr:attendance'; // Minimal caching for offline
 const CACHE_KEY = 'qr:customersData';
 const CACHE_TIME_KEY = 'qr:cacheTime';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 jam (kita gunakan manual sync untuk update)
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 jam (kita gunakan manual sync untuk update)'
+const DOMAIN = '@bintangmas.local'
 
 let customerCache = null;
 
@@ -95,19 +99,76 @@ function formatCustomer(row) {
 /* --- AUTHENTICATION API --- */
 
 export async function loginUser(username, password) {
-  return await callApi('login', { username, password });
+  const user = (await signInWithEmailAndPassword(getAuth(), username + DOMAIN, password)).user
+  const userData = await getDoc(doc(db, 'users', user.uid))
+
+  return {
+    success: true, data: {
+      token: user.accessToken,
+      username: userData.data().username,
+      role: userData.data().role,
+    }
+  } // await callApi('login', { username, password });
 }
 
 export async function registerUser(username, password, role, creatorRole) {
-  return await callApi('register', { username, password, role, creatorRole });
+  if (creatorRole !== 'admin')
+    return { success: false, error: 'Unauthorized' }
+  const email = username + DOMAIN
+  try {
+    const user = (await createUserWithEmailAndPassword(getAuth(), email, password)).user
+    await setDoc(doc(db, 'users', user.uid), {
+      email,
+      username,
+      role,
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp()
+    });
+
+    return {
+      success: true
+    } // await callApi('register', { username, password, role, creatorRole });}
+  } catch (e) {
+    return {
+      success: false,
+      error: e.code === 'auth/email-already-in-use' ? 'Username telah digunakan' : e.message
+    }
+  }
 }
 
 export async function getUsers(role) {
-  return await callApi('getUsers', { role });
+  if (role !== 'admin')
+    return { success: false, error: 'Unauthorized' }
+  const userDocs = (await getDocs(users)).docs
+  const user = userDocs.map(doc => ({ id: doc.id, ...doc.data() }))
+  return {
+    success: true,
+    data: user
+  } // await callApi('getUsers', { role });
 }
 
 export async function deleteUser(username, role, targetUser) {
-  return await callApi('deleteUser', { username, role, targetUser });
+  if (role !== 'admin')
+    return { success: false, error: 'Unauthorized' }
+  try {
+    const q = query(users, where('username', '==', targetUser))
+    const snapshot = await getDocs(q)
+    const deletePromises = snapshot.docs.map(user => {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}user/${user.id}`, {
+        method: 'DELETE'
+      })
+      deleteDoc(user.ref)
+    });
+    await Promise.all(deletePromises);
+    return {
+      success: true
+    } // await callApi('deleteUser', { username, role, targetUser });}
+  } catch (e) {
+    return {
+      success: false,
+      error: e.message
+    }
+  }
 }
 
 export async function requestPasswordReset(username) {
@@ -122,25 +183,50 @@ export async function verifyOTPAndReset(username, otp, newPassword) {
 
 export async function logActivity(user, activity, details) {
   // Fire and forget, don't await blocking UI
-  callApi('logActivity', { user, activity, details });
+  // callApi('logActivity', { user, activity, details });
+  addDoc(history, { user, activity, details, timestamp: serverTimestamp() })
 }
 
 export async function getGlobalHistory(userRole) {
-  return await callApi('getGlobalHistory', { userRole });
+  return {
+    success: true,
+    data: await getHistory(userRole)
+  } // await callApi('getGlobalHistory', { userRole });
 }
 
 /* --- GUEST BOOK / ATTENDANCE --- */
 
 export async function checkInCustomer(customer) {
-  return await callApi('checkIn', { customer });
+  const uppercaseCustomer = uppercasedCustomer(customer)
+  await addDoc(attendance, { ...uppercaseCustomer, timestamp: serverTimestamp() })
+  return {
+    success: true
+  }// await callApi('checkIn', { customer });
 }
 
+export const uppercasedCustomer = (customer) => Object.fromEntries(Object.entries(customer).map(([k, v]) => (k !== 'id' && k !== 'kode' && k !== 'telp') ? [k, (v || "").trim().toUpperCase()] : [k, v])) 
+
 export async function addAndCheckIn(customer) {
-  return await callApi('addAndCheckIn', { customer });
+  const customerQuery = query(customers, where('id', '==', customer.id))
+  const customerSnapshot = await getDocs(customerQuery)
+  if (customerSnapshot.docs.length === 0)
+    await addCustomer(customer)
+  return checkInCustomer(customer)// await callApi('addAndCheckIn', { customer });
 }
 
 export async function getAttendanceList() {
-  return await callApi('getAttendance');
+  const startToday = new Date()
+  startToday.setHours(0, 0, 0, 0)
+  const endToday = new Date()
+  endToday.setHours(23, 59, 59, 999)
+  const startTimestamp = Timestamp.fromDate(startToday)
+  const endTimestamp = Timestamp.fromDate(endToday)
+  const q = query(attendance, where('timestamp', '>=', startTimestamp), where('timestamp', '<=', endTimestamp))
+  const attendances = await getDocs(q)
+  return {
+    success: true,
+    data: attendances.docs.map(doc => ({ ...doc.data(), timestamp: doc.data().timestamp.toDate() }))
+  }// await callApi('getAttendance');
 }
 
 /* --- CUSTOMER DATA --- */
@@ -186,10 +272,21 @@ export async function getCustomers(forceReload = false) {
   }
 
   // 2. Fetch from API
-  const result = await callApi('getCustomers');
+  // const result = await callApi('getCustomers');
+  const result = await getDocs(customers);
 
-  if (result.success) {
-    const formattedData = result.data.map(formatCustomer);
+  if (!result.empty) {
+    const formattedData = result.docs.map(customer => ({
+      no: customer.data().no,
+      id: customer.data().id,
+      nama: customer.data().nama,
+      kota: customer.data().kota,
+      sales: customer.data().sales,
+      pabrik: customer.data().pabrik,
+      cabang: customer.data().cabang,
+      telp: customer.data().telp,
+      kode: customer.data().kode
+    }));
 
     // 3. Update Memory & LocalStorage
     customerCache = formattedData;
@@ -215,27 +312,6 @@ export async function getCustomers(forceReload = false) {
   return { success: false, error: result.error };
 }
 
-export async function getCustomersLite(forceReload = false) {
-  // 1. Return cache if available
-  const CACHE_KEY_LITE = 'qr:customersLite';
-  if (!forceReload && typeof window !== 'undefined') {
-    const cached = localStorage.getItem(CACHE_KEY_LITE);
-    if (cached) return { success: true, data: JSON.parse(cached), source: 'cache' };
-  }
-
-  // 2. Fetch from API
-  const result = await callApi('getCustomersLite');
-
-  if (result.success) {
-    // 3. Save to LocalStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(CACHE_KEY_LITE, JSON.stringify(result.data));
-    }
-    return { success: true, data: result.data, source: 'api' };
-  }
-  return { success: false, error: result.error };
-}
-
 // Tambah customer baru
 export async function addCustomer(customerData) {
   if (!customerData.nama || !customerData.kota || !customerData.cabang) {
@@ -245,14 +321,17 @@ export async function addCustomer(customerData) {
     };
   }
 
-  const result = await callApi('addCustomer', { customer: customerData });
+  if (!customerData.kode) customerData.kode = ""
+  if (!customerData.telp) customerData.telp = ""
 
-  if (!result.success) {
-    return { success: false, error: result.error };
+  try {
+    const result = await addDoc(customers, uppercasedCustomer(customerData))
+
+    // Merge input data with result data (so if result is fallback, we still have the input)
+    return { success: true, data: { ...customerData, ...result.data } };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
-
-  // Merge input data with result data (so if result is fallback, we still have the input)
-  return { success: true, data: { ...customerData, ...result.data } };
 }
 
 // Edit existing customer
@@ -261,30 +340,46 @@ export async function editCustomer(customerData) {
     return { success: false, error: 'Customer tanpa ID tidak dapat diedit.' };
   }
 
-  const result = await callApi('editCustomer', { customer: customerData });
+  try {
+    // updateDoc tidak mengembalikan value (undefined jika sukses)
+    const q = query(customers, where('id', '==', customerData.id))
+    const snapshot = await getDocs(q)
 
-  if (!result.success) {
-    return { success: false, error: result.error };
+    // Hapus field yang bernilai undefined dari data (Firebase tidak mensupport value undefined)
+    const cleanedData = Object.fromEntries(
+      Object.entries(customerData).filter(([_, v]) => v !== undefined)
+    );
+
+    snapshot.forEach(document => {
+      updateDoc(document.ref, uppercasedCustomer(cleanedData))
+    })
+
+    clearCache();
+    // Clear cache to force reload next time
+
+    return { success: true, data: customerData };
+  } catch (e) {
+    return { success: false, error: e.message || 'Gagal mengubah data' };
   }
-
-  // Clear cache to force reload next time
-  clearCache();
-
-  return { success: true, data: result.data };
 }
 
 // Delete existing customer
 export async function deleteCustomer(id) {
   if (!id) return { success: false, error: 'ID required' };
 
-  const result = await callApi('deleteCustomer', { id });
+  try {
+    const q = query(customers, where('id', '==', id))
+    const snapshot = await getDocs(q)
 
-  if (!result.success) {
-    return { success: false, error: result.error };
+    // Gunakan Promise.all untuk menunggu semua proses delete selesai
+    const deletePromises = snapshot.docs.map(document => deleteDoc(document.ref));
+    await Promise.all(deletePromises);
+
+    clearCache();
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message || 'Gagal menghapus data' };
   }
-
-  clearCache();
-  return { success: true };
 }
 
 export function clearCache() {
@@ -292,5 +387,6 @@ export function clearCache() {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(CACHE_TIME_KEY);
+    window.location.reload()
   }
 }

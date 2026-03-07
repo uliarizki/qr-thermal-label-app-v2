@@ -2,7 +2,9 @@
 // Utility untuk manage history di localStorage
 
 // import { addHistoryToDB, getHistoryFromDB, initDB } from './db'; // DISABLED due to stability issues
+import { deleteDoc, getDocs, orderBy, query } from 'firebase/firestore';
 import { logActivity } from './googleSheets'; // Import Cloud Logger
+import { history } from '../config/firebase';
 
 const LOCAL_STORAGE_KEY = 'qr:history_log';
 
@@ -47,8 +49,7 @@ export async function addHistory(action, details = {}) {
     }
 
     // Convert details to string for Sheet
-    const detailsStr = JSON.stringify(details);
-    logActivity(username, action, detailsStr).catch(err => console.error("Cloud Sync Failed:", err));
+    logActivity(username, action, details).catch(err => console.error("Cloud Sync Failed:", err));
 
   } catch (error) {
     console.error('Error saving history:', error);
@@ -59,12 +60,17 @@ export async function addHistory(action, details = {}) {
  * Ambil semua history
  * @returns {Promise<Array>}
  */
-export async function getHistory() {
+export async function getHistory(role) {
   if (typeof window === 'undefined') return [];
 
   try {
-    const str = localStorage.getItem(LOCAL_STORAGE_KEY);
-    const data = str ? JSON.parse(str) : [];
+    const str = role === 'admin' ? (await getDocs(query(history, orderBy('timestamp', 'desc')))).docs.map(doc => ({
+      action: doc.data().activity,
+      timestamp: doc.data().timestamp?.toDate(),
+      details: doc.data().details,
+      username: doc.data().user
+    })) : localStorage.getItem(LOCAL_STORAGE_KEY);
+    const data = typeof str === 'string' ? JSON.parse(str) : str;
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error reading history locally:', error);
@@ -77,8 +83,8 @@ export async function getHistory() {
  * @param {string} action - 'ADD', 'SEARCH', 'SCAN', atau 'ALL'
  * @returns {Promise<Array>}
  */
-export async function filterHistoryByAction(action) {
-  const history = await getHistory();
+export async function filterHistoryByAction(action, role) {
+  const history = await getHistory(role);
   if (action === 'ALL') return history;
   return history.filter(item => item.action === action);
 }
@@ -86,9 +92,13 @@ export async function filterHistoryByAction(action) {
 /**
  * Clear semua history
  */
-export async function clearHistory() {
+export async function clearHistory(role) {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(LOCAL_STORAGE_KEY);
+  if (role === 'admin')
+    await fetch(`${import.meta.env.VITE_BACKEND_URL}history`, {
+      method: 'DELETE'
+    })
 }
 
 /**

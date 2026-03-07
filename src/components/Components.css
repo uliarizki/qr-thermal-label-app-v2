@@ -278,6 +278,10 @@
 
 .form-group {
   margin-bottom: 15px;
+
+  & input {
+    text-transform: uppercase;
+  }
 }
 
 .form-group label {

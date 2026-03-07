@@ -4,6 +4,7 @@ import { validateLogin } from '../schemas/validationSchemas';
 import { ApiError } from '../services/api';
 import { logActivity } from '../utils/googleSheets';
 import { toast } from 'react-hot-toast';
+import { getAuth, signOut } from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
@@ -153,6 +154,8 @@ export const AuthProvider = ({ children }) => {
         if (user) {
             logActivity(user.username, 'LOGOUT', { timestamp: new Date() });
         }
+
+        signOut(getAuth())
 
         // Secure Logout: Clear All Local Data
         const keysToRemove = ['qr:auth_user', 'qr:auth_time', 'qr:customers_cache', 'qr:lastTab', 'qr:history_log'];
