@@ -67,6 +67,12 @@ export default function AdminLogs() {
             // FORMAT: REGISTER
             else if (row.action === 'REGISTER_USER') {
                 return <span>👤 New User: <b>{row.details.newUser}</b> (Role: {row.details.role})</span>;
+            } else if (row.action === 'ADD') {
+                return <div>
+                    <strong>{row.details.nama || 'Customer'}</strong>
+                    {row.details.customerId && <span className="history-id"> ({row.details.customerId})</span>}
+                    {row.details.kota && <span> - {row.details.kota}</span>}
+                </div>
             }
         } catch (e) {
             // Keep original string if parse fails
