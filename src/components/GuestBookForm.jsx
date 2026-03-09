@@ -84,7 +84,10 @@ export default function GuestBookForm({
                                             padding: '6px 12px', fontSize: 12, minWidth: 'auto', height: 30,
                                             opacity: isOnline ? 1 : 0.5, cursor: isOnline ? 'pointer' : 'not-allowed'
                                         }}
-                                        onClick={() => isOnline ? handleSelectCustomer(cust) : null}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (isOnline) handleSelectCustomer(cust);
+                                        }}
                                         title={isOnline ? "Pilih" : "Offline"}
                                     >
                                         {isOnline ? 'Pilih' : 'Offline'}
