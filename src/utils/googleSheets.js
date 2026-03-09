@@ -207,7 +207,11 @@ export function listenGlobalHistory(userRole, callback) {
 
 export async function checkInCustomer(customer) {
   const uppercaseCustomer = uppercasedCustomer(customer)
-  await addDoc(attendance, { ...uppercaseCustomer, timestamp: serverTimestamp() })
+  const uniqueKey = (new Date()).toISOString().split('T')[0] + "_" + customer.nama + "_" + customer.kota + "_" + customer.cabang
+  const snapshot = await getDocs(query(attendance, where('uniqueKey', '==', uniqueKey)))
+  if(snapshot.docs.length > 0)
+    return { success: false, error: 'Tamu sudah check-in hari ini!' }
+  await addDoc(attendance, { ...uppercaseCustomer, timestamp: serverTimestamp(), uniqueKey })
   return {
     success: true
   }// await callApi('checkIn', { customer });
