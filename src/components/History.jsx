@@ -34,7 +34,6 @@ export default function History({ onSelect }) {
 
   const handleClear = () => {
     clearHistory(user?.role);
-    setHistory([]);
     setShowClearConfirm(false);
   };
 
