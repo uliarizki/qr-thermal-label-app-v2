@@ -135,7 +135,7 @@ export default function PrintPreview({ data }) {
         returnBlob: true
       });
 
-      await shareOrDownload(blob, filename);
+      await shareOrDownload(blob, filename, data.nt, data.nt, 'application/pdf');
       toast.dismiss(toastId);
     } catch (err) {
       console.error('Share error:', err);
