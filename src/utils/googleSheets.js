@@ -209,7 +209,7 @@ export async function checkInCustomer(customer) {
   const uppercaseCustomer = uppercasedCustomer(customer)
   const uniqueKey = (new Date()).toISOString().split('T')[0] + "_" + customer.nama + "_" + customer.kota + "_" + customer.cabang
   const snapshot = await getDocs(query(attendance, where('uniqueKey', '==', uniqueKey)))
-  if(snapshot.docs.length > 0)
+  if (snapshot.docs.length > 0)
     return { success: false, error: 'Tamu sudah check-in hari ini!' }
   await addDoc(attendance, { ...uppercaseCustomer, timestamp: serverTimestamp(), uniqueKey })
   return {
@@ -469,47 +469,74 @@ export function clearCache() {
 // ==========================================
 export async function migrateDataToFirestore(onProgress) {
   try {
-    if (onProgress) onProgress({ status: 'fetching', message: 'Fetching data from Google Sheets API...' });
+    if (onProgress) onProgress({ status: 'fetching', message: 'Mengekstraksi referensi eksternal dari Google Sheets API...' });
 
-    // Call the original getCustomers action from apps script
+    // 1. Ekstraksi data primer
     const result = await callApi('getCustomers');
     if (!result.success) {
-      throw new Error(result.error || 'Failed to fetch from Google Sheets');
+      throw new Error(result.error || 'Gagal mengekstraksi data dari sumber');
     }
 
     const sheetCustomers = result.data.filter(customer => customer.id !== "");
     if (!Array.isArray(sheetCustomers) || sheetCustomers.length === 0) {
-      throw new Error('No data found in Google Sheets');
+      throw new Error('Data referensi (Google Sheets) kosong');
     }
 
-    if (onProgress) onProgress({ status: 'processing', message: `Found ${sheetCustomers.length} customers. Starting migration...` });
+    if (onProgress) onProgress({ status: 'processing', message: 'Membangun Peta Rekonsiliasi Dokumen (O(N))...' });
 
-    const CHUNK_SIZE = 400; // Firestore batch limit is 500
+    // 2. Pemetaan Document ID (Map) dari Firestore
+    // Map = Kunci: customer.id (dari spreadsheet) -> Nilai: doc.id (UUID Firestore asli)
+    const existingDocs = await getDocs(customers);
+    const existingMap = new Map();
+    existingDocs.forEach(doc => {
+      const data = doc.data();
+      if (data.id) {
+        existingMap.set(String(data.id), doc.id);
+      }
+    });
+
+    if (onProgress) onProgress({ status: 'processing', message: `Memulai eksekusi Upsert (Update/Insert) untuk ${sheetCustomers.length} entri...` });
+
+    // 3. Fragmentasi dan Eksekusi Upsert Batch
+    const CHUNK_SIZE = 400; // Limit maksimum Firestore per Batch: 500
     let count = 0;
+    let updateCount = 0;
+    let insertCount = 0;
 
     for (let i = 0; i < sheetCustomers.length; i += CHUNK_SIZE) {
       const chunk = sheetCustomers.slice(i, i + CHUNK_SIZE);
       const batch = writeBatch(db);
 
       for (const customer of chunk) {
-        // Prepare data mimicking addCustomer formatting
-        // Keep initial 'id' so that the structure is maintained, but doc() generates a new doc id.
-        // Or if 'id' from google sheets matters, use it. But in previous code addCustomer ignores it.
+        const customerIdKey = String(customer.id);
 
-        // Use auto-id reference
-        const docRef = doc(customers);
-        batch.set(docRef, customer);
+        if (existingMap.has(customerIdKey)) {
+          // Operasi UPDATE (Merge-Overwrite): Jika data sudah terpetakan di Firestore
+          const firestoreDocId = existingMap.get(customerIdKey);
+          const docRef = doc(customers, firestoreDocId);
+          batch.set(docRef, customer, { merge: true });
+          updateCount++;
+        } else {
+          // Operasi INSERT (Auto-UUID): Data murni dari Spreadsheet yang belum ada
+          const docRef = doc(customers);
+          batch.set(docRef, customer);
+          insertCount++;
+        }
       }
 
       await batch.commit();
       count += chunk.length;
-      if (onProgress) onProgress({ status: 'progress', message: `Migrating: ${count} / ${sheetCustomers.length}` });
+      if (onProgress) onProgress({ status: 'progress', message: `Menyelaraskan Batch: ${count} / ${sheetCustomers.length}` });
     }
 
-    if (onProgress) onProgress({ status: 'done', message: `Successfully migrated ${count} customers.` });
+    if (onProgress) onProgress({
+      status: 'done',
+      message: `Sinkronisasi Selesai. Total Insert: ${insertCount} | Total Update: ${updateCount}`
+    });
+
     return { success: true, count };
   } catch (error) {
-    if (onProgress) onProgress({ status: 'error', message: `Error: ${error.message}` });
+    if (onProgress) onProgress({ status: 'error', message: `Error Sinkronisasi: ${error.message}` });
     return { success: false, error: error.message };
   }
 }
