@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import jsQR from 'jsqr'
 import { addHistory } from '../utils/history'
 import './Components.css'
@@ -7,6 +7,7 @@ export default function QRScanner({ onScan, onClose }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const streamRef = useRef(null) // Dedicated stream ref for cleanup
+  const rafRef = useRef(null)    // Track latest rAF ID for proper cancellation
   const [hasCamera, setHasCamera] = useState(true)
   const [isScanning, setIsScanning] = useState(true)
   const [lastScanned, setLastScanned] = useState(null)
@@ -124,7 +125,11 @@ export default function QRScanner({ onScan, onClose }) {
   useEffect(() => {
     if (!isScanning) return
 
+    let active = true // Gate to break the recursive loop on cleanup
+
     const scanQR = () => {
+      if (!active) return // Stop recursion if effect was cleaned up
+
       const video = videoRef.current
       const canvas = canvasRef.current
 
@@ -137,10 +142,11 @@ export default function QRScanner({ onScan, onClose }) {
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
         const code = jsQR(imageData.data, imageData.width, imageData.height)
 
-        if (code) {
+        if (code && active) {
           try {
             const data = JSON.parse(code.data)
             if (data.it && data.nt) {
+              active = false // Prevent further loop iterations
               setLastScanned(data)
               setIsScanning(false)
               setError(null)
@@ -153,6 +159,7 @@ export default function QRScanner({ onScan, onClose }) {
               })
 
               onScan(data)
+              return // Exit — do NOT schedule another frame
             }
           } catch (e) {
             console.log('Invalid JSON in QR code')
@@ -160,11 +167,20 @@ export default function QRScanner({ onScan, onClose }) {
         }
       }
 
-      requestAnimationFrame(scanQR)
+      // Only continue looping if still active
+      if (active) {
+        rafRef.current = requestAnimationFrame(scanQR)
+      }
     }
 
-    const frameId = requestAnimationFrame(scanQR)
-    return () => cancelAnimationFrame(frameId)
+    rafRef.current = requestAnimationFrame(scanQR)
+    return () => {
+      active = false
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    }
   }, [isScanning, onScan])
 
   // Handlers
