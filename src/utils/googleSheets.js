@@ -394,8 +394,8 @@ export async function addCustomer(customerData) {
     };
   }
 
-  if (!customerData.kode) customerData.kode = ""
   if (!customerData.telp) customerData.telp = ""
+  if (!customerData.kode) customerData.kode = `{"it":"${customerData.id}","nt":"${customerData.nama}","at":"${customerData.kota}","pt":"${customerData.sales}","kp":"${customerData.pabrik}","ws":"${customerData.cabang}","np":"${customerData.telp}"}`
 
   try {
     const result = await addDoc(customers, uppercasedCustomer(customerData))
