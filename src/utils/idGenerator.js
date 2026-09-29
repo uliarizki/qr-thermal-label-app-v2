@@ -4,9 +4,9 @@
  */
 
 const BRANCH_CODES = {
-    'BT SMG': 'SMG',
-    'BT JKT': 'JKT',
-    'BT SBY': 'SBY',
+    'BT SMG': 'BTSMG',
+    'BT JKT': 'BTJKT',
+    'BT SBY': 'BTSBY',
 };
 
 /**
