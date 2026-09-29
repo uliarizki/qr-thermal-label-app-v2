@@ -26,6 +26,10 @@
     border: 2px solid #D4AF37;
     padding-bottom: 20px;
     /* Add padding at bottom since footer is gone */
+
+    & h2, span:not(.card-type), label {
+        text-shadow: 1.5px 1.5px 1px rgba(0,0,0,1) !important;
+    }
 }
 
 /* Abstract Wave/Curve Overlay - DISABLED as we use image now */
