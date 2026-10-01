@@ -27,7 +27,7 @@
     padding-bottom: 20px;
     /* Add padding at bottom since footer is gone */
 
-    & h2, span:not(.card-type), label {
+    & h2, span:not(.card-type):not(.brand-name), label {
         text-shadow: 1.5px 1.5px 1px rgba(0,0,0,1) !important;
     }
 }
