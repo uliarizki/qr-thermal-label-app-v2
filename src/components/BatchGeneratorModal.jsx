@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { flushSync } from 'react-dom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toast } from 'react-hot-toast';
@@ -8,10 +9,19 @@ import { addCustomer } from '../utils/googleSheets';
 import { Icons } from './Icons';
 import { usePrinter } from '../context/PrinterContext';
 import DigitalCard from './DigitalCard';
-import { generateCardBlob } from '../utils/cardGenerator';
+import { generateCardBlob, CARD_MIME, CARD_EXT, CARD_QUALITY_BATCH } from '../utils/cardGenerator';
 import { useModalHistory } from '../hooks/useModalHistory';
 import './BatchGeneratorModal.css';
 
+// ID Card ZIP is split into parts above this size, so a big branch export
+// never has to hold the whole batch in browser memory at once.
+const MAX_ZIP_BYTES = 500 * 1024 * 1024;
+
+// How many ID Cards are rendered & captured at the same time during batch export
+const RENDER_CONCURRENCY = 8;
+
+// Catalog view mounts a full DigitalCard (with QR) per item, so it is shown page by page
+const GALLERY_PAGE_SIZE = 60;
 
 // Row Component for Virtualized List
 const Row = ({ data, index, style }) => {
@@ -59,10 +69,51 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
 
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'gallery' (Catalog)
     const [isProcessing, setIsProcessing] = useState(false);
-    const [processingItem, setProcessingItem] = useState(null); // For ID Card Generation
+    const [renderItems, setRenderItems] = useState([]); // Cards mounted in the hidden render area (ID Card Generation)
     const [shareTarget, setShareTarget] = useState(null); // For single share
-    const cardRef = React.useRef(null);
+    const cardRefs = React.useRef([]); // DOM nodes of renderItems, same order
+    const cancelRef = React.useRef(false);
+    const [isExportingIds, setIsExportingIds] = useState(false); // ID Card ZIP export running (cancellable)
+    const [galleryLimit, setGalleryLimit] = useState(GALLERY_PAGE_SIZE);
     const [progress, setProgress] = useState('');
+
+    // Ready list rows. Memoized: a branch can hold thousands of rows, and without this
+    // every progress update during export would re-render all of them.
+    const readyListRows = useMemo(() => items.map((item, index) => (
+        <div key={index} className="list-row">
+            <div className="cell">{item.name}</div>
+            <div className="cell">{item.city}</div>
+            <div className="cell branch-col">{item.branch}</div>
+            <div>
+                <span
+                    title={item.message}
+                    className={`status-badge ${item.status === 'ready' ? 'ready' : 'new'}`}
+                    style={{ cursor: 'help' }}
+                >
+                    {item.status.toUpperCase()}
+                </span>
+            </div>
+            <div style={{ width: 40 }}>
+                <button
+                    className="icon-btn danger"
+                    title="Run Remove"
+                    onClick={() => {
+                        const newItems = [...items];
+                        newItems.splice(index, 1);
+                        setItems(newItems);
+                    }}
+                >
+                    <span style={{ fontSize: '14px' }}>🗑️</span>
+                </button>
+            </div>
+        </div>
+    )), [items]);
+
+    // Mount cards in the hidden render area and return their DOM nodes (same order)
+    const mountCards = (cardItems) => {
+        flushSync(() => setRenderItems(cardItems));
+        return cardItems.map((_, k) => cardRefs.current[k]);
+    };
 
     // History Management (Disabled for debugging)
     const handleClose = onClose;
@@ -327,54 +378,104 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
 
     // 4. Generate ID Card Images ZIP
     const generateIdZip = async () => {
+        cancelRef.current = false;
+        setIsExportingIds(true);
         setIsProcessing(true);
         // setProgress('Preparing ID Cards...');
 
         try {
-            const zip = new JSZip();
+            let zip = new JSZip();
+            let zipBytes = 0;
+            let part = 0;
             let count = 0;
+            let failed = 0;
+            const stamp = new Date().getTime();
+            const usedNames = new Set();
 
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                setProgress(`Rendering ${i + 1}/${items.length}: ${item.name}`);
+            // Save the current ZIP and start a new one, so memory is released between parts
+            const flushZip = async (isLast) => {
+                part++;
+                setProgress(isLast && part === 1 ? 'Building ZIP...' : `Building ZIP part ${part}...`);
+                // STORE: JPEGs are already compressed, deflating them again only costs time & memory
+                const content = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+                const suffix = isLast && part === 1 ? '' : `_part${part}`;
+                saveAs(content, `Batch_DigitalIDs_${stamp}${suffix}.zip`);
+                zip = new JSZip();
+                zipBytes = 0;
+            };
 
-                // Render the card
-                setProcessingItem(item);
+            // Cards are rendered & captured a few at a time instead of one by one
+            for (let start = 0; start < items.length && !cancelRef.current; start += RENDER_CONCURRENCY) {
+                const chunk = items.slice(start, start + RENDER_CONCURRENCY);
+                const done = start + chunk.length;
+                setProgress(`Rendering ${done}/${items.length}: ${chunk[0].name}`);
 
-                // Wait for React to render and images to load
-                await new Promise(resolve => setTimeout(resolve, 500));
+                const elements = mountCards(chunk);
 
-                if (cardRef.current) {
-                    try {
-                        const blob = await generateCardBlob(cardRef.current);
-                        const safeName = item.name.replace(/[^a-z0-9]/gi, '_');
-                        const safeCity = item.city.replace(/[^a-z0-9]/gi, '_');
-                        const rawId = item.displayId || '';
-                        const safeId = (rawId.startsWith('{') || rawId.length > 20) ? 'ID' : rawId;
+                // First cards only: give the logo, background and brand font time to load.
+                // After that everything is cached, so no per-card delay is needed.
+                if (start === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
 
-                        const filename = `${safeName}_${safeCity}_${safeId || 'ID'}.png`;
-                        zip.file(filename, blob);
-                        count++;
-                    } catch (err) {
-                        console.error(`Failed to capture card for ${item.name}`, err);
+                const blobs = await Promise.all(elements.map((element, k) =>
+                    generateCardBlob(element, { quality: CARD_QUALITY_BATCH }).catch(err => {
+                        console.error(`Failed to capture card for ${chunk[k].name}`, err);
+                        return null;
+                    })
+                ));
+
+                blobs.forEach((blob, k) => {
+                    const item = chunk[k];
+                    if (!blob) {
+                        failed++;
+                        return;
                     }
+
+                    const safeName = String(item.name).replace(/[^a-z0-9]/gi, '_');
+                    const safeCity = String(item.city).replace(/[^a-z0-9]/gi, '_');
+                    const rawId = String(item.displayId || '');
+                    const safeId = (rawId.startsWith('{') || rawId.length > 20) ? 'ID' : rawId;
+
+                    // Same name + city would silently overwrite each other inside the ZIP
+                    const baseName = `${safeName}_${safeCity}_${safeId || 'ID'}`;
+                    let filename = `${baseName}.${CARD_EXT}`;
+                    for (let n = 2; usedNames.has(filename.toLowerCase()); n++) {
+                        filename = `${baseName}_${n}.${CARD_EXT}`;
+                    }
+                    usedNames.add(filename.toLowerCase());
+
+                    zip.file(filename, blob);
+                    zipBytes += blob.size;
+                    count++;
+                });
+
+                if (zipBytes >= MAX_ZIP_BYTES && done < items.length) {
+                    await flushZip(false);
                 }
             }
 
-            setProcessingItem(null); // Cleanup
+            setRenderItems([]); // Cleanup
 
-            setProgress('Compressing Images...');
-            const content = await zip.generateAsync({ type: 'blob' });
-            saveAs(content, `Batch_DigitalIDs_${new Date().getTime()}.zip`);
+            if (cancelRef.current) {
+                setProgress('ID Card export cancelled.');
+                return;
+            }
 
-            setProgress(`Downloaded ${count} ID Cards.`);
+            if (zipBytes > 0) await flushZip(true);
+
+            const failedNote = failed > 0 ? ` (${failed} failed, see console)` : '';
+            setProgress(part > 1
+                ? `Downloaded ${count} ID Cards in ${part} ZIP files.${failedNote}`
+                : `Downloaded ${count} ID Cards.${failedNote}`);
 
         } catch (e) {
             console.error(e);
             setProgress('Error generating ID ZIP: ' + e.message);
         } finally {
             setIsProcessing(false);
-            setProcessingItem(null);
+            setIsExportingIds(false);
+            setRenderItems([]);
         }
     };
 
@@ -386,13 +487,13 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
 
         try {
             // 1. Setup Render
-            setProcessingItem(item);
-            // 2. Wait for Render
+            const [cardElement] = mountCards([item]);
+            // 2. Wait for images to load
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            if (cardRef.current) {
-                const blob = await generateCardBlob(cardRef.current);
-                const file = new File([blob], `ID_${item.name}.png`, { type: 'image/png' });
+            if (cardElement) {
+                const blob = await generateCardBlob(cardElement);
+                const file = new File([blob], `ID_${item.name}.${CARD_EXT}`, { type: CARD_MIME });
 
                 // 3. Trigger Share
                 if (navigator.share) {
@@ -404,7 +505,7 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
                     setProgress(`Shared ${item.name} successfully!`);
                 } else {
                     // Fallback for Desktop (Download)
-                    saveAs(blob, `ID_${item.name}.jpg`);
+                    saveAs(blob, `ID_${item.name}.${CARD_EXT}`);
                     setProgress(`Web Share not supported. Downloaded ${item.name} instead.`);
                 }
             }
@@ -413,7 +514,7 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
             alert("Failed to share: " + e.message);
         } finally {
             setIsProcessing(false);
-            setProcessingItem(null);
+            setRenderItems([]);
             setShareTarget(null);
         }
     };
@@ -654,7 +755,7 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
                                 </div>
                             </div>
 
-                            <div className="list-container">
+                            <div className={`list-container ${isExportingIds ? 'is-exporting' : ''}`}>
                                 {tab === 'ready' ? (
                                     /* READY ITEMS LIST */
                                     items.length === 0 ? (
@@ -672,39 +773,11 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
                                                 <div>Status</div>
                                                 <div style={{ width: 40 }}></div>
                                             </div>
-                                            {items.map((item, index) => (
-                                                <div key={index} className="list-row">
-                                                    <div className="cell">{item.name}</div>
-                                                    <div className="cell">{item.city}</div>
-                                                    <div className="cell branch-col">{item.branch}</div>
-                                                    <div>
-                                                        <span
-                                                            title={item.message}
-                                                            className={`status-badge ${item.status === 'ready' ? 'ready' : 'new'}`}
-                                                            style={{ cursor: 'help' }}
-                                                        >
-                                                            {item.status.toUpperCase()}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ width: 40 }}>
-                                                        <button
-                                                            className="icon-btn danger"
-                                                            title="Run Remove"
-                                                            onClick={() => {
-                                                                const newItems = [...items];
-                                                                newItems.splice(index, 1);
-                                                                setItems(newItems);
-                                                            }}
-                                                        >
-                                                            <span style={{ fontSize: '14px' }}>🗑️</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                            {readyListRows}
                                         </div>
                                     ) : (
                                         <div className="gallery-container">
-                                            {items.map((item, index) => (
+                                            {items.slice(0, galleryLimit).map((item, index) => (
                                                 <div key={index} className="gallery-card">
                                                     <div className="card-preview">
                                                         <div className="scaled-card">
@@ -730,6 +803,15 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
                                                     </div>
                                                 </div>
                                             ))}
+                                            {items.length > galleryLimit && (
+                                                <button
+                                                    className="action-btn secondary"
+                                                    style={{ gridColumn: '1 / -1', justifySelf: 'center' }}
+                                                    onClick={() => setGalleryLimit(galleryLimit + GALLERY_PAGE_SIZE)}
+                                                >
+                                                    Show more ({galleryLimit} of {items.length})
+                                                </button>
+                                            )}
                                         </div>
                                     )
                                 ) : (
@@ -898,19 +980,19 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
 
                             {/* Hidden Render Area for html2canvas */}
                             <div className="hidden-render">
-                                {processingItem && (
-                                    <div style={{ width: 500, height: 300 }}>
+                                {renderItems.map((renderItem, k) => (
+                                    <div key={k} style={{ width: 500, height: 300 }}>
                                         <DigitalCard
-                                            ref={cardRef}
+                                            ref={el => { cardRefs.current[k] = el; }}
                                             customer={{
-                                                nama: processingItem.name,
-                                                kota: processingItem.city,
-                                                cabang: processingItem.branch === '-' ? '' : processingItem.branch,
-                                                kode: processingItem.kode || processingItem.displayId || 'N/A'
+                                                nama: renderItem.name,
+                                                kota: renderItem.city,
+                                                cabang: renderItem.branch === '-' ? '' : renderItem.branch,
+                                                kode: renderItem.kode || renderItem.displayId || 'N/A'
                                             }}
                                         />
                                     </div>
-                                )}
+                                ))}
                             </div>
                         </>
                     )}
@@ -921,6 +1003,17 @@ export default function BatchGeneratorModal({ customers, onClose, onSync }) {
                     <div className="loading-overlay">
                         <div className="spinner"></div>
                         <div className="loading-text">{progress || 'Processing...'}</div>
+                        {isExportingIds && (
+                            <button
+                                className="action-btn secondary small"
+                                onClick={() => {
+                                    cancelRef.current = true;
+                                    setProgress('Cancelling...');
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

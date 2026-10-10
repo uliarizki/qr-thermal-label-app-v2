@@ -184,6 +184,12 @@
     background: white;
 }
 
+/* During ID Card export the list sits behind the loading overlay anyway.
+   Taking its thousands of rows out of layout makes each card capture ~3x faster. */
+.batch-modal .list-container.is-exporting > * {
+    display: none;
+}
+
 .batch-modal .list-header {
     display: grid;
     grid-template-columns: 2fr 1.5fr 1.5fr 70px;

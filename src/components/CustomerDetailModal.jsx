@@ -9,7 +9,7 @@ import { Icons } from './Icons';
 import { addHistory } from '../utils/history';
 import { editCustomer, deleteCustomer } from '../utils/googleSheets';
 import { shareOrDownload, downloadBlob } from '../utils/shareUtils';
-import { generateCardBlob } from '../utils/cardGenerator';
+import { generateCardBlob, CARD_MIME, CARD_EXT } from '../utils/cardGenerator';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
@@ -63,7 +63,7 @@ export default function CustomerDetailModal({ customer, onClose }) {
     const getFilename = () => {
         const cleanName = (customer.nama || 'CUSTOMER').replace(/[\\/:*?"<>|]/g, ' ').trim();
         const cleanCity = (customer.kota || 'CITY').replace(/[\\/:*?"<>|]/g, ' ').trim();
-        return `${cleanName}_${cleanCity}_${customer.id}.png`;
+        return `${cleanName}_${cleanCity}_${customer.id}.${CARD_EXT}`;
     };
 
     const handleDownloadImage = async () => {
@@ -95,7 +95,7 @@ export default function CustomerDetailModal({ customer, onClose }) {
                 filename,
                 'Digital ID Card',
                 `Digital ID for ${customer.nama}`,
-                'image/png'
+                CARD_MIME
             );
         } catch (err) {
             console.error(err);
