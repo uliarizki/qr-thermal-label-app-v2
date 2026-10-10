@@ -229,7 +229,7 @@
   /* DESKTOP: Show Full Data (6 Columns) */
   grid-template-columns: 80px 3fr 1.5fr 1.5fr 100px 60px;
   /* ID | Name | City | Phone | Branch | QR */
-  gap: 15px;
+  gap: 30px;
   align-items: center;
   padding: 12px 20px;
   background: white;
@@ -440,6 +440,7 @@
   border-radius: 4px;
   min-width: 60px;
   text-align: center;
+  width: fit-content;
 }
 
 .customer-name {
