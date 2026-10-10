@@ -69,24 +69,10 @@ export default function CustomerForm({
     // Access customers for duplicate check and ID generation
     const { customers } = useCustomer();
 
-    // Auto-Generate ID when Branch changes (only if ID is empty and NOT in edit mode)
-    useEffect(() => {
-        if (!isEditMode && formData.cabang) {
-            const newId = generateCustomerId(formData.cabang, customers || []);
-            setFormData(prev => ({ ...prev, id: newId }));
-        }
-    }, [formData.cabang, isEditMode]); // We only want to trigger on branch change or mount
-
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // 1. Force ID Generation if Empty (Safety Net)
         let finalId = formData.id;
-        if (!isEditMode && !finalId && formData.cabang) {
-            finalId = generateCustomerId(formData.cabang, customers || []);
-            // Update state for UI immediately (though component might unmount/reset)
-            setFormData(prev => ({ ...prev, id: finalId }));
-        }
 
         // 2. Prepare Data
         const upperCasedData = {};
@@ -156,6 +142,20 @@ export default function CustomerForm({
                     </h3>
 
                     <div className="form-group">
+                        <label>ID Customer <span className="required">*</span></label>
+                        <input
+                            type="text"
+                            name="id"
+                            value={formData.id}
+                            onChange={handleChange}
+                            onFocus={(e) => e.target.select()} // Auto-select all text on click/tap
+                            maxLength="20"
+                            style={isEditMode ? { background: '#f5f5f5', color: '#999' } : {}}
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
                         <label>Nama Customer <span className="required">*</span></label>
                         <input
                             type="text"
@@ -185,39 +185,6 @@ export default function CustomerForm({
                 {/* OPTIONAL FIELDS */}
                 <div className="form-section">
                     <h3>📋 Data Tambahan (Opsional)</h3>
-
-                    <div className="form-group">
-                        <label>ID Customer</label>
-                        <input
-                            type="text"
-                            name="id"
-                            value={formData.id}
-                            onChange={handleChange}
-                            onFocus={(e) => e.target.select()} // Auto-select all text on click/tap
-                            placeholder="Kosongkan jika belum ada ID" // ID usually shouldn't be edited if it's the key, but user might want to fix it.
-                            maxLength="20"
-                            disabled
-                            style={isEditMode ? { background: '#f5f5f5', color: '#999' } : {}}
-                        />
-                        {isEditMode && <small>💡 ID tidak dapat diubah</small>}
-                        {!isEditMode && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <small>💡 Otomatis dibuat sesuai Cabang</small>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (formData.cabang) {
-                                            const newId = generateCustomerId(formData.cabang, customers || []);
-                                            setFormData(prev => ({ ...prev, id: newId }));
-                                        }
-                                    }}
-                                    style={{ background: 'none', border: 'none', color: '#D4AF37', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
-                                >
-                                    ↻ Generate Ulang
-                                </button>
-                            </div>
-                        )}
-                    </div>
 
                     <div className="form-group">
                         <label>Sales (Wholesaler)</label>
